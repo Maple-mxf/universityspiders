@@ -15,8 +15,13 @@ def read_data():
             print(school['school_id'])
             print(school['name'])
 
-from universityspiders.settings import DOWNLOAD_DELAY
+
+def is_holiday(yourstring: str):
+    match yourstring.split():
+        case [*_, "holidays"]:
+            return True
+        case [*_, "workday"]:
+            return False
 
 
-
-read_data()
+print(is_holiday("xmas holidays"))

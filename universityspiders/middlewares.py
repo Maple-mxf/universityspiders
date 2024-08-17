@@ -66,7 +66,7 @@ class UniversityspidersDownloaderMiddleware:
         return s
 
     def process_request(self, request: scrapy.Request, spider: UniversitySpider):
-        time.sleep(2)
+        time.sleep(2.5)
         cb_kwargs: dict = request.cb_kwargs
         if cb_kwargs.get('api', None) is not None:
             if request.method == 'GET':

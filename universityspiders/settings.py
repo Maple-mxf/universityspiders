@@ -47,7 +47,7 @@ DOWNLOADER_MIDDLEWARES = {
 # }
 
 ITEM_PIPELINES = {
-    "universityspiders.pipelines.UniversityspidersPipeline": 300,
+    "universityspiders.pipelines.UniversityPipeline": 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

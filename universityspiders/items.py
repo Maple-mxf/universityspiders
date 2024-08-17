@@ -6,7 +6,6 @@ class University(scrapy.Item):
     id = scrapy.Field()
     zh_name = scrapy.Field()
     logo = scrapy.Field()
-    hot = scrapy.Field()
 
     official_website = scrapy.Field()
     admission_contact_phone = scrapy.Field()
@@ -16,6 +15,7 @@ class University(scrapy.Item):
     aa_ranking = scrapy.Field()  # 校友会排名
     qs_ranking = scrapy.Field()  # QS排名
     usn_ranking = scrapy.Field()  # U.S. News世界大学排名
+    the_ranking = scrapy.Field() # 泰晤士大学排名
     hot_ranking = scrapy.Field()  # 人气排名
     edu_level = scrapy.Field()  # 教育层次，A代表本科 B代表专科
     edu_category = scrapy.Field()  # 教育层次，A代表本科 B代表专科
@@ -31,11 +31,18 @@ class University(scrapy.Item):
     master_program_num = scrapy.Field()  # 硕士点总数
     important_score_num = scrapy.Field()  # 重点学科数量
 
-    province = scrapy.Field()
-    city = scrapy.Field()
-    county = scrapy.Field()
+    province_id = scrapy.Field()
+    province_name = scrapy.Field()
+    city_name = scrapy.Field()
+    county_name = scrapy.Field()
 
     introduction = scrapy.Field()
+
+    baseinfo1 = scrapy.Field()
+    baseinfo2 = scrapy.Field()
+    baseinfo3 = scrapy.Field()
+    baseinfo4 = scrapy.Field()
+    baseinfo5 = scrapy.Field()
 
 
 class Major(scrapy.Item):
