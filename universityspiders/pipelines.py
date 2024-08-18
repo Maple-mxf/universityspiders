@@ -6,7 +6,7 @@ from universityspiders.items import (
     University,
     Major,
     MajorScore,
-    AdmissionsPlan
+    AdmissionsPlan, AdmissionsNews
 )
 import pymysql
 import re
@@ -337,5 +337,45 @@ class AdmissionsPlanPipeline(Write2DBPipeline):
             item['edu_dur'],
         ))
         if len(self.data) >= 10:
+            self.write_batch_data()
+            self.data.clear()
+
+
+class AdmissionsNewsPipeline(Write2DBPipeline):
+    def close_spider(self, spider):
+        super().close_spider(spider)
+
+    def process_item(self, item: scrapy.Item, spider):
+        if isinstance(item, AdmissionsNews):
+            return self._process_item(item, spider)
+        return item
+
+    def write_batch_data(self):
+        sqlscript = """
+        insert into admissions_news(
+        id, publish_date, title, content, type_id, type_name, university_id)
+        values(%s,%s,%s,%s,%s,%s,%s)
+        on duplicate key update 
+        publish_date = values(publish_date),
+        title = values(title),
+        content = values(content),
+        type_id = values(type_id),
+        type_name = values(type_name),
+        university_id = values(university_id)
+        """
+        self.cursor.executemany(sqlscript, self.data)
+        self.conn.commit()
+
+    def _process_item(self, item: scrapy.Item, spider):
+        self.data.append((
+            item['id'],
+            item['publish_date'],
+            item['title'],
+            item['content'],
+            item['type_id'],
+            item['type_name'],
+            item['university_id'],
+        ))
+        if len(self.data) > 2:
             self.write_batch_data()
             self.data.clear()

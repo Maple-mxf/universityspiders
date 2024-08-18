@@ -47,13 +47,13 @@ class UniversitySpider(scrapy.Spider):
             model['id'] = university_id
             model['logo'] = f'https://static-data.gaokao.cn/upload/logo/{university_id}.jpg'
 
-            yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{model["id"]}/info.json',
-                          callback=self.parse_university_detail,
-                          cb_kwargs={'university': model})
+            # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{model["id"]}/info.json',
+            #               callback=self.parse_university_detail,
+            #               cb_kwargs={'university': model})
 
-            # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
-            #               callback=self.parse_news_list,
-            #               cb_kwargs={'university_id': university_id, 'api': True})
+            yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
+                          callback=self.parse_news_list,
+                          cb_kwargs={'university_id': university_id, 'api': True})
             break
 
     def parse_news_list(self, response: TextResponse, **kwargs):
@@ -62,14 +62,11 @@ class UniversitySpider(scrapy.Spider):
         newslist = parse('$.data').find(json_data)[0].value
 
         for news in newslist:
-            id = news['id']
-            type = news['type']
             yield Request(
-                url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/{type}/{id}.json',
+                url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/{news["type"]}/{news["id"]}.json',
                 callback=self.parse_news_detail,
                 cb_kwargs={'university_id': university_id, 'api': True}
             )
-            break  # TODO
 
     def parse_news_detail(self, response: TextResponse, **kwargs):
         university_id = kwargs['university_id']
@@ -83,7 +80,7 @@ class UniversitySpider(scrapy.Spider):
         news['university_id'] = university_id
         news['title'] = data.get('title', '')
         news['content'] = data.get('content', '')
-        news['type_id'] = data.get('type_id', '')
+        news['type_id'] = data.get('type', '')
         news['type_name'] = data.get('type_name', '')
         news['publish_date'] = data.get('add_time', None)
 

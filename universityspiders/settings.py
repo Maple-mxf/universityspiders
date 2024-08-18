@@ -12,7 +12,7 @@ ROBOTSTXT_OBEY = False
 CONCURRENT_REQUESTS = 1
 
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
-DOWNLOAD_DELAY = 1.5
+DOWNLOAD_DELAY = 1
 RANDOMIZE_DOWNLOAD_DELAY = True
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
 CONCURRENT_REQUESTS_PER_IP = 1
@@ -58,6 +58,7 @@ ITEM_PIPELINES = {
     "universityspiders.pipelines.MajorPipeline": 301,
     "universityspiders.pipelines.MajorScorePipeline": 302,
     "universityspiders.pipelines.AdmissionsPlanPipeline": 303,
+    "universityspiders.pipelines.AdmissionsNewsPipeline": 303,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -93,4 +94,4 @@ DB_PORT = 3306
 DB_USER = 'root'
 DB_PWD = '123456'
 DB_DATABASE = 'universityspiders'
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'

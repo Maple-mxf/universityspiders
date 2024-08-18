@@ -6,7 +6,7 @@ def _parse_api_resp(resp_text) -> tuple:
     json_data = json.loads(resp_text)
     code = parse('$.code').find(json_data)[0].value
     message = parse('$.message').find(json_data)[0].value
-    if code is not '0000':
+    if code != '0000':
         return False, {'code': code, 'message': message}
     data = parse('$.data').find(json_data)[0].value
     return True, data
