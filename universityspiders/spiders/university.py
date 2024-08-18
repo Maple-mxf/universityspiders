@@ -1,42 +1,35 @@
 import json
-from typing import Iterable, Any
+from typing import Iterable
 from urllib.parse import urlencode
 
 import scrapy
 from jsonpath_ng import parse
-from scrapy import signals, Request, Selector
-from scrapy.http import HtmlResponse, TextResponse
-from selenium.webdriver import Chrome
-from selenium.webdriver.chrome.options import Options
+from scrapy import (
+    signals,
+    Request
+)
+from scrapy.http import (
+    HtmlResponse,
+    TextResponse
+)
 
-from universityspiders import UNIVERSITY_META, P_PROVINCE_MAPPING_META, R_PROVINCE_MAPPING_META
-from universityspiders.items import University, Major, MajorScore, UniversityAdmissionsPlan
+from universityspiders import (
+    UNIVERSITY_META,
+    P_PROVINCE_MAPPING_META,
+    R_PROVINCE_MAPPING_META
+)
+from universityspiders.items import (
+    University,
+    Major,
+    MajorScore,
+    AdmissionsPlan,
+    AdmissionsNews
+)
+from universityspiders.spiders import _parse_api_resp
 
 
 class UniversitySpider(scrapy.Spider):
     name = "university"
-
-    def __init__(self, **kwargs: Any):
-        super().__init__(**kwargs)
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--proxy-server=http://127.0.0.1:7890")
-        self.driver = Chrome(chrome_options)
-
-        # self.driver.get('https://www.gaokao.cn/school/search')
-        #
-        # qrcode = WebDriverWait(self.driver, 60, 3).until(
-        #     matcher.presence_of_element_located((By.CLASS_NAME, 'login-popup_loginPopup__d_xjJ')))
-        # print('请扫描二维码...')
-        #
-        # WebDriverWait(self.driver, 300, 3).until(
-        #     matcher.invisibility_of_element_located((By.CLASS_NAME, 'login-popup_loginPopup__d_xjJ'))
-        # )
-        # print('登录成功！')
-        # self.p_province_mapping, self.r_province_mapping = read_province_mapping_meta()
 
     @classmethod
     def from_crawler(cls, crawler, *args, **kwargs):
@@ -46,78 +39,123 @@ class UniversitySpider(scrapy.Spider):
 
     def spider_closed(self, spider):
         spider.logger.info("Spider closed: %s", spider.name)
-        # spider.driver.quit()
 
     def start_requests(self) -> Iterable[Request]:
         for university_id, university_name in UNIVERSITY_META.items():
             model = University()
             model['zh_name'] = university_name
             model['id'] = university_id
+            model['logo'] = f'https://static-data.gaokao.cn/upload/logo/{university_id}.jpg'
 
-            yield Request(url=f'https://www.gaokao.cn/school/{model["id"]}',
+            yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{model["id"]}/info.json',
                           callback=self.parse_university_detail,
                           cb_kwargs={'university': model})
+            # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
+            #               callback=self.parse_news_list,
+            #               cb_kwargs={'university_id': university_id, 'api': True})
+            break
+
+    def parse_news_list(self, response: TextResponse, **kwargs):
+        university_id = kwargs['university_id']
+        json_data = json.loads(response.text)
+        newslist = parse('$.data').find(json_data)[0].value
+
+        for news in newslist:
+            id = news['id']
+            type = news['type']
+            yield Request(
+                url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/{type}/{id}.json',
+                callback=self.parse_news_detail,
+                cb_kwargs={'university_id': university_id, 'api': True}
+            )
             break  # TODO
 
-    def _mapped_to_textlist(self, nodelist, css_elist):
-        if nodelist is None: return []
-        ret = []
-        for node in nodelist:
-            texts = [node.css(css).extract_first() for css in css_elist]
-            ret.append(' '.join([text for text in texts if text is not None]))
-        return ret
+    def parse_news_detail(self, response: TextResponse, **kwargs):
+        university_id = kwargs['university_id']
+        news = AdmissionsNews()
+
+        success, data = _parse_api_resp(resp_text=response.text)
+        if success is False:
+            return
+
+        news['id'] = data.get('id')
+        news['university_id'] = university_id
+        news['title'] = data.get('title', '')
+        news['content'] = data.get('content', '')
+        news['type_id'] = data.get('type_id', '')
+        news['type_name'] = data.get('type_name', '')
+        news['publish_date'] = data.get('add_time', None)
+
+        yield news
 
     def parse_university_detail(self, response: HtmlResponse, **kwargs):
         university = kwargs['university']
-        sel = Selector(response)
 
-        baseinfo_nodelist1 = sel.xpath(
-            '//div[starts-with(@class,"school-tab_labelBox")]/div[starts-with(@class,"school-tab_item")]')
+        json_text = bytes(response.text, response.encoding).decode('unicode_escape')
+        json_data = json.loads(json_text)
+        data = parse('$.data').find(json_data)[0].value
 
-        university['baseinfo1'] = self._mapped_to_textlist(baseinfo_nodelist1, ['div::text', 'a::text'])
+        university['official_website'] = ','.join(
+            [data.get('site', ''), data.get('school_site', '')]
+        )
+        university['admissions_contact_phone'] = data.get('phone', '')
+        university['admissions_contact_email'] = data.get('email', '')
 
-        baseinfo_nodelist2 = sel.xpath('//div[starts-with(@class,"shcool-rank_item")]')
-        university['baseinfo2'] = self._mapped_to_textlist(baseinfo_nodelist2, ['div > span::text','div::text'])
+        university['edu_level'] = data.get('level_name', '')
+        university['edu_category'] = data.get('type_name', '')
+        university['edu_establish'] = data.get('nature_name', '')
+        university['f211'] = data.get('f211', '0')
+        university['f985'] = data.get('f985', '0')
 
-        baseinfo_nodelist3 = sel.xpath(
-            '//div[starts-with(@class,"school-tab_tags")]/div[starts-with(@class,"school-tab_item")]')
-        university['baseinfo3'] = self._mapped_to_textlist(baseinfo_nodelist3, ['div::text'])
+        university['mgr_dept'] = data.get('belong', '')
+        university['establish_time'] = data.get('create_date', '')
+        university['area'] = data.get('area', '')
+        university['address'] = data.get('address', '')
 
-        baseinfo_nodelist4 = sel.xpath('//div[@class="school-tags-des"]/div')
-        university['baseinfo4'] = self._mapped_to_textlist(baseinfo_nodelist4, ['span::text'])
+        university['province_name'] = data.get('province_name', '')
+        university['province_id'] = data.get('province_id', '')
+        university['city_name'] = data.get('city_name', '')
+        university['city_id'] = data.get('city_id', '')
+        university['city_id'] = data.get('city_id', '')
+        university['county_id'] = data.get('county_id', '')
+        university['town_name'] = data.get('town_name', '')
 
-        baseinfo_nodelist5 = sel.xpath(
-            '//div[@class="base_info_item_top clearfix"]/div[starts-with(@class,"top_item_box")]')
-        university['baseinfo5'] = self._mapped_to_textlist(baseinfo_nodelist5,
-                                                           ['div > img::text', 'div.label-num > span::text',
-                                                            'div::text'])
+        # TODO school_batch字段是用于查询接口？
+        university['doctoral_program_num'] = data.get('num_doctor', '0')
+        university['master_program_num'] = data.get('num_master', '0')
+        university['important_subject_num'] = data.get('num_subject', '0')
 
-        university['logo'] = sel.xpath('//img[starts-with(@class,"school-tab_schoolLogo")]').css('img::attr(src)').extract_first()
+        rank = data['rank']
+        if rank:
+            university['arwu_ranking'] = rank.get('ruanke_rank', '')
+            university['aa_ranking'] = rank.get('xyh_rank', '')
+            university['qs_ranking'] = rank.get('qs_world', '')
+            university['usn_ranking'] = rank.get('us_rank', '')
+            university['the_ranking'] = rank.get('tws_china', '')
 
-        yield university
+        yield Request(
+            url=f'https://static-data.gaokao.cn/www/2.0/school/{university["id"]}/detail/69000.json',
+            callback=self.parse_university_intro,
+            cb_kwargs={'university': university, 'api': True}
+        )
 
-        # yield Request(
-        #     url=f'https://static-data.gaokao.cn/www/2.0/school/{university["id"]}/detail/69000.json',
-        #     callback=self.parse_university_intro,
-        #     cb_kwargs={'university': university, 'api': True}
-        # )
-        #
         # yield Request(
         #     url=f'https://static-data.gaokao.cn/www/2.0/school/{university["id"]}/pc_special.json',
         #     callback=self.parse_university_professional,
         #     cb_kwargs={'university_id': university['id'], 'api': True}
         # )
-        #
-        # # 招生计划只采集山东的
-        # for req in self.create_admissions_plan_reqs(university['id'], '37'):
-        #     yield req
-        #
-        # for req in self.create_major_score_reqs(university['id']):
-        #     yield req
 
-        # for province_id in self.p_province_mapping:
-        #     for req in self.create_admissions_plan_reqs(university['id'], province_id):
-        #         yield req
+    #
+    # # 招生计划只采集山东的
+    # for req in self.create_admissions_plan_reqs(university['id'], '37'):
+    #     yield req
+    #
+    # for req in self.create_major_score_reqs(university['id']):
+    #     yield req
+
+    # for province_id in self.p_province_mapping:
+    #     for req in self.create_admissions_plan_reqs(university['id'], province_id):
+    #         yield req
 
     def create_major_score_reqs(self, university_id) -> Iterable[Request]:
         major_score_q = {
@@ -226,13 +264,14 @@ class UniversitySpider(scrapy.Spider):
             major_score['year'] = item['year']
             major_score['str_id'] = item['id']
             major_score['subject_name'] = item['local_type_name']
-            major_score['average'] = item['average']
+            major_score['avg'] = item['average']
             major_score['max'] = item['max']
             major_score['min'] = item['min']
+            major_score['min_ranking'] = item['min_section']
             major_score['batch_num_name'] = item['local_batch_name']
 
-            major_score['course_scopes_name'] = item['level2_name']
-            major_score['course_category_name'] = item['level3_name']
+            major_score['subject_scopes_name'] = item['level2_name']
+            major_score['subject_category_name'] = item['level3_name']
 
             major_score['province_name'] = item.get('local_province_name', '')
             major_score['province_id'] = R_PROVINCE_MAPPING_META.get(major_score['province_name']) or ''
@@ -260,7 +299,7 @@ class UniversitySpider(scrapy.Spider):
             return
         plan_list = parse('$.data.item').find(json_data)[0].value
         for plan in plan_list:
-            admissions_plan = UniversityAdmissionsPlan()
+            admissions_plan = AdmissionsPlan()
             admissions_plan['major_name'] = plan['spname']
             admissions_plan['admissions_stu_num'] = plan['num']
 

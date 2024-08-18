@@ -34,6 +34,7 @@ class Write2DBPipeline:
             self.write_restdata_batch()
             self.conn.commit()
         self.conn.close()
+        pass
 
 
 class UniversityPipeline(Write2DBPipeline):
@@ -44,70 +45,122 @@ class UniversityPipeline(Write2DBPipeline):
         return item
 
     def _process_item(self, item: scrapy.Item, spider):
-        baseinfo1 = item.get('baseinfo1', None)
-        if baseinfo1 is not None:
-            for line in baseinfo1:
-                if '官方网址' in line:
-                    item['official_website'] = line
-                elif '招生电话' in line:
-                    item['admission_contact_phone'] = line
-                elif '电子邮箱' in line:
-                    item['admission_contact_email'] = line
-
-        baseinfo2 = item.get('baseinfo2', None)
-        if baseinfo2 is not None:
-            for line in baseinfo2:
-                matcher = re.match('^(\d+)(.*)$', line)
-                if matcher:
-                    num = matcher.group(1)
-                    desc = matcher.group(2)
-                    if '博士点' in desc:
-                        item['doctoral_program_num'] = num
-                    elif '硕士点' in desc:
-                        item['master_program_num'] = num
-                    elif '国家重点学科' in desc:
-                        item['important_score_num'] = num
-
-        baseinfo3 = item.get('baseinfo3', None)
-        if baseinfo3:
-            item['tags'] = [x for x in baseinfo3]
-
-        baseinfo4 = item.get('baseinfo4', None)
-        if baseinfo4:
-            for line in baseinfo4:
-                matcher1 = re.match('^\\s*建校时间：\\s*(\\d+)(.*)\\s*$', line)
-                if matcher1:
-                    item['establish_time'] = matcher1.group(1)
-                matcher2 = re.match('^\\s*占地面积：\\s*(\\d+[\u4e00-\u9fa5]*)\\s*$', line)
-                if matcher2:
-                    item['area'] = matcher2.group(1)
-                matcher3 = re.match('^\\s*主管部门：\\s*(.*)\\s*$', line)
-                if matcher3:
-                    item['mgr_dept'] = matcher3.group(1)
-                matcher4 = re.match('^\\s*学校地址：\\s*(.*)\\s*$', line)
-                if matcher4:
-                    item['address'] = matcher4.group(1)
-
-        baseinfo5 = item.get('baseinfo5', None)
-        if baseinfo5:
-            for line in baseinfo5:
-                matcher1 = re.match('^.*博士\\D+(\\d+)\\D+$', line)
-                if matcher1:
-                    item['doctoral_program_num'] = matcher1.group(1)
-                matcher2 = re.match('^.*硕士\\D+(\\d+)\\D+$', line)
-                if matcher2:
-                    item['master_program_num'] = matcher2.group(1)
-                matcher3 = re.match('^.*国家重点学科\\D+(\\d+)\\D+$', line)
-                if matcher3:
-                    item['important_score_num'] = matcher3.group(1)
-
-
-
-
+        self._execute_sqlscript(item)
         return item
 
-    def _execute_sqlscript(self, item):
-        pass
+    def _execute_sqlscript(self, item: scrapy.Item):
+        sqlscript = """
+        insert into university(id, zh_name, logo, official_website, admissions_contact_phone, admissions_contact_email,
+                       arwu_ranking, aa_ranking, qs_ranking, usn_ranking, the_ranking, edu_level, edu_category,
+                       edu_establish, tags, establish_time, area, mgr_dept, address, doctoral_program_num,
+                       master_program_num, important_subject_num, province_id, province_name, city_name, city_id,
+                       county_name, county_id, town_name, introduction, f985, f211)
+        values (%s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,
+        %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,%s,%s)
+        on duplicate key update 
+        zh_name= %s,  
+        logo= %s,  
+        official_website= %s, 
+        admissions_contact_phone= %s,  
+        admissions_contact_email= %s,  
+        arwu_ranking= %s,  
+        aa_ranking= %s,  
+        qs_ranking= %s,  
+        usn_ranking= %s,  
+        the_ranking= %s,  
+        edu_level= %s,  
+        edu_category= %s,  
+        edu_establish= %s,  
+        tags= %s,  
+        establish_time= %s,  
+        area= %s,  
+        mgr_dept= %s,  
+        address= %s,  
+        doctoral_program_num= %s,  
+        master_program_num= %s,  
+        important_subject_num= %s,  
+        province_id= %s,  
+        province_name= %s,  
+        city_name= %s,  
+        city_id= %s,  
+        county_name= %s,  
+        county_id= %s,  
+        town_name= %s,  
+        introduction= %s,  
+        f985= %s,  
+        f211=%s
+        """
+
+        self.cursor.execute(sqlscript,
+                            (
+                                item['id'],
+                                item.get('zh_name', ''),
+                                item.get('logo', ''),
+                                item.get('official_website', ''),
+                                item.get('admissions_contact_phone', ''),
+                                item.get('admissions_contact_email', ''),
+                                item.get('arwu_ranking', -1),
+                                item.get('aa_ranking', -1),
+                                item.get('qs_ranking', -1),
+                                item.get('usn_ranking', -1),
+                                item.get('the_ranking', -1),
+                                item.get('edu_level', ''),
+                                item.get('edu_category', ''),
+                                item.get('edu_establish', ''),
+                                item.get('tags', ''),
+                                item.get('establish_time', ''),
+                                item.get('area', ''),
+                                item.get('mgr_dept', ''),
+                                item.get('address', ''),
+                                item.get('doctoral_program_num', 0),
+                                item.get('master_program_num', 0),
+                                item.get('important_subject_num', 0),
+                                item.get('province_id', 0),
+                                item.get('province_name', ''),
+                                item.get('city_name', ''),
+                                item.get('city_id', 0),
+                                item.get('county_name', ''),
+                                item.get('county_id', 0),
+                                item.get('town_name', ''),
+                                item.get('introduction', ''),
+                                item.get('f985', 0),
+                                item.get('f211', 0),
+
+                                # =====>
+                                item.get('zh_name', ''),
+                                item.get('logo', ''),
+                                item.get('official_website', ''),
+                                item.get('admissions_contact_phone', ''),
+                                item.get('admissions_contact_email', ''),
+                                item.get('arwu_ranking', -1),
+                                item.get('aa_ranking', -1),
+                                item.get('qs_ranking', -1),
+                                item.get('usn_ranking', -1),
+                                item.get('the_ranking', -1),
+                                item.get('edu_level', ''),
+                                item.get('edu_category', ''),
+                                item.get('edu_establish', ''),
+                                item.get('tags', ''),
+                                item.get('establish_time', ''),
+                                item.get('area', ''),
+                                item.get('mgr_dept', ''),
+                                item.get('address', ''),
+                                item.get('doctoral_program_num', 0),
+                                item.get('master_program_num', 0),
+                                item.get('important_subject_num', 0),
+                                item.get('province_id', 0),
+                                item.get('province_name', ''),
+                                item.get('city_name', ''),
+                                item.get('city_id', 0),
+                                item.get('county_name', ''),
+                                item.get('county_id', 0),
+                                item.get('town_name', ''),
+                                item.get('introduction', ''),
+                                item.get('f985', 0),
+                                item.get('f211', 0),
+                            ))
+
+        self.conn.commit()
 
     def close_spider(self, spider):
         pass

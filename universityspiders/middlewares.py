@@ -66,20 +66,7 @@ class UniversityspidersDownloaderMiddleware:
         return s
 
     def process_request(self, request: scrapy.Request, spider: UniversitySpider):
-        time.sleep(2.5)
-        cb_kwargs: dict = request.cb_kwargs
-        if cb_kwargs.get('api', None) is not None:
-            if request.method == 'GET':
-                spider.driver.get(request.url)
-                content = spider.driver.find_element(By.TAG_NAME, 'pre').text
-                return TextResponse(url=request.url, request=request, body=content, encoding='utf-8')
-            else:
-                # spider.driver.execute_script()
-                print('暂时不支持POST请求')
-        else:
-            spider.driver.get(request.url)
-            html = spider.driver.page_source
-            return HtmlResponse(url=request.url, request=request, body=html, encoding='utf-8')
+        return None
 
     def process_response(self, request, response: scrapy.http.TextResponse, spider):
         return response
