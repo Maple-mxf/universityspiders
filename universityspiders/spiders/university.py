@@ -8,7 +8,6 @@ from scrapy import signals, Request, Selector
 from scrapy.http import HtmlResponse, TextResponse
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
-from bs4 import BeautifulSoup
 
 from universityspiders import UNIVERSITY_META, P_PROVINCE_MAPPING_META, R_PROVINCE_MAPPING_META
 from universityspiders.items import University, Major, MajorScore, UniversityAdmissionsPlan
@@ -20,10 +19,10 @@ class UniversitySpider(scrapy.Spider):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")
-        # chrome_options.add_argument("--disable-gpu")
-        # chrome_options.add_argument("--no-sandbox")
-        # chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--proxy-server=http://127.0.0.1:7890")
         self.driver = Chrome(chrome_options)
 

@@ -16,12 +16,3 @@ def read_data():
             print(school['name'])
 
 
-def is_holiday(yourstring: str):
-    match yourstring.split():
-        case [*_, "holidays"]:
-            return True
-        case [*_, "workday"]:
-            return False
-
-
-print(is_holiday("xmas holidays"))

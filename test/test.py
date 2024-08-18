@@ -1,7 +1,9 @@
 import re
 
-match = re.match('^(\d+)(\s+)(.*)$', '112 软科综合')
-print(match.group(0))
-print(match.group(1))
-print(match.group(2))
-print(match.group(3))
+#博士点(一级/二级)64 / --个
+# 硕士点(一级/二级)64 / --个
+# 国家重点学科44个
+
+match = re.match('^.*博士\\D+(\\d+)\\D+$', '博士点(一级/二级)64 / --个')
+if match:
+    print(match.group(1))
