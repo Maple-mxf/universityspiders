@@ -1,9 +1,13 @@
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 import scrapy
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 
-from universityspiders.items import University, Major
+from universityspiders.items import (
+    University,
+    Major,
+    MajorScore,
+    AdmissionsPlan
+)
 import pymysql
 import re
 from scrapy.utils.project import get_project_settings
@@ -26,12 +30,12 @@ class Write2DBPipeline:
         self.cursor = self.conn.cursor()
         self.data = []
 
-    def write_restdata_batch(self):
+    def write_batch_data(self):
         pass
 
     def close_spider(self, spider):
         if len(self.data) > 0:
-            self.write_restdata_batch()
+            self.write_batch_data()
             self.conn.commit()
         self.conn.close()
         pass
@@ -39,7 +43,6 @@ class Write2DBPipeline:
 
 class UniversityPipeline(Write2DBPipeline):
     def process_item(self, item: scrapy.Item, spider):
-        print(item)
         if isinstance(item, University):
             return self._process_item(item, spider)
         return item
@@ -163,4 +166,176 @@ class UniversityPipeline(Write2DBPipeline):
         self.conn.commit()
 
     def close_spider(self, spider):
-        pass
+        super().close_spider(spider)
+
+
+class MajorPipeline(Write2DBPipeline):
+    def process_item(self, item: scrapy.Item, spider):
+        if isinstance(item, Major):
+            return self._process_item(item, spider)
+        return item
+
+    def _process_item(self, item: scrapy.Item, spider):
+        self.data.append((
+            item['id'],
+            item.get('zh_name', ''),
+            item.get('code', ''),
+            item.get('edu_level', ''),
+            item.get('course_scopes', ''),
+            item.get('course_category', ''),
+            item.get('edu_duration', ''),
+            item.get('graduate', ''),
+            item.get('introduction', ''),
+            item.get('university_id', '')
+        ))
+        if len(self.data) > 5:
+            self.write_batch_data()
+            self.data.clear()
+
+    def write_batch_data(self):
+        sqlscript = """
+        insert into major(
+                  id, 
+                  zh_name,
+                  code,
+                  edu_level,
+                  course_scopes,
+                  course_category,
+                  edu_duration,
+                  graduate,
+                  introduction,
+                  university_id)
+            values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            on duplicate key update 
+            zh_name = values(zh_name),
+            code = values(code),
+            edu_level =  values(edu_level),
+            course_scopes = values(course_scopes),
+            course_category = values(course_category),
+            edu_duration = values(edu_duration),
+            graduate = values(graduate),
+            introduction = values(introduction),
+            university_id = values(university_id)
+        """
+        self.cursor.executemany(sqlscript, self.data)
+        self.conn.commit()
+
+    def close_spider(self, spider):
+        super().close_spider(spider)
+
+
+class MajorScorePipeline(Write2DBPipeline):
+    def process_item(self, item: scrapy.Item, spider):
+        if isinstance(item, MajorScore):
+            return self._process_item(item, spider)
+        return item
+
+    def _process_item(self, item: scrapy.Item, spider):
+        self.data.append((
+            item['str_id'],
+            item['subject_name'],
+            item['avg'],
+            item['max'],
+            item['min'],
+            item['min_ranking'],
+            item['batch_num_name'],
+            item['subject_scopes_name'],
+            item['subject_category_name'],
+            item['major_id'],
+            item['university_id'],
+            item['year'],
+            item['province_id'],
+            item['province_name'],
+            item['min_range'],
+            item['min_rank_range'],
+        ))
+        if len(self.data) >= 10:
+            self.write_batch_data()
+            self.data.clear()
+
+    def write_batch_data(self):
+        sqlscript = """
+        insert into major_score(str_id,
+         subject_name, `avg`, `max`, `min`, min_ranking, 
+         batch_num_name, subject_scopes_name,
+                        subject_category_name,
+                         major_id, university_id, `year`, province_id, province_name,
+                         min_range,min_rank_range )
+        values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        on duplicate key update 
+        subject_name=values(subject_name),
+        `avg`=values(`avg`),
+        `max`=values(`max`),
+        `min`=values(`min`),
+        min_ranking=values(min_ranking),
+        batch_num_name=values(batch_num_name),
+        subject_scopes_name=values(subject_scopes_name),
+        subject_category_name=values(subject_category_name),
+        major_id=values(major_id),
+        university_id=values(university_id),
+        `year`=values(`year`),
+        province_id=values(province_id),
+        province_name=values(province_name),
+        min_range=values(min_range),
+        min_rank_range=values(min_rank_range)
+        """
+        self.cursor.executemany(sqlscript, self.data)
+        self.conn.commit()
+
+    def close_spider(self, spider):
+        super().close_spider(spider)
+
+
+class AdmissionsPlanPipeline(Write2DBPipeline):
+    def close_spider(self, spider):
+        super().close_spider(spider)
+
+    def write_batch_data(self):
+        sqlscript = """
+        insert into admissions_plan(
+        major_name, 
+        admissions_stu_num, edu_fee, university_id, 
+        major_code, batch_num_name,
+        subject_name, `year`,
+        province_id, province_name, cond, edu_dur)
+        values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        on duplicate key update 
+        major_name = values(major_name),
+        admissions_stu_num = values(admissions_stu_num),
+        edu_fee = values(edu_fee),
+        university_id = values(university_id),
+        major_code = values(major_code),
+        batch_num_name = values(batch_num_name),
+        subject_name = values(subject_name),
+        `year` = values(`year`),
+        `province_id` = values(`province_id`),
+        `province_name` = values(`province_name`),
+        `cond` = values(`cond`),
+        `edu_dur` = values(`edu_dur`)
+        """
+        self.cursor.executemany(sqlscript, self.data)
+        self.conn.commit()
+
+    def process_item(self, item: scrapy.Item, spider):
+        if isinstance(item, AdmissionsPlan):
+            return self._process_item(item, spider)
+        return item
+
+    def _process_item(self, item: scrapy.Item, spider):
+        self.data.append((
+            item['major_name'],
+            item['admissions_stu_num'],
+            item['edu_fee'],
+            item['university_id'],
+            item['major_code'],
+            item['batch_num_name'],
+            item['subject_name'],
+            item['year'],
+            item['province_id'],
+            item['province_name'],
+            item['cond'],
+            item['edu_dur'],
+        ))
+        if len(self.data) >= 10:
+            self.write_batch_data()
+            self.data.clear()

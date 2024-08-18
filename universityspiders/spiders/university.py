@@ -50,6 +50,7 @@ class UniversitySpider(scrapy.Spider):
             yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{model["id"]}/info.json',
                           callback=self.parse_university_detail,
                           cb_kwargs={'university': model})
+
             # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
             #               callback=self.parse_news_list,
             #               cb_kwargs={'university_id': university_id, 'api': True})
@@ -145,48 +146,30 @@ class UniversitySpider(scrapy.Spider):
         #     cb_kwargs={'university_id': university['id'], 'api': True}
         # )
 
-    #
-    # # 招生计划只采集山东的
-    # for req in self.create_admissions_plan_reqs(university['id'], '37'):
-    #     yield req
-    #
-    # for req in self.create_major_score_reqs(university['id']):
-    #     yield req
-
-    # for province_id in self.p_province_mapping:
-    #     for req in self.create_admissions_plan_reqs(university['id'], province_id):
-    #         yield req
+        #
+        # # 招生计划只采集山东的
+        for req in self.create_admissions_plan_reqs(university['id'], 37):
+            yield req
+        #
+        # for req in self.create_major_score_reqs(university['id']):
+        #     yield req
 
     def create_major_score_reqs(self, university_id) -> Iterable[Request]:
-        major_score_q = {
-            # 'local_province_id': province_id,
+        q = {
             'page': 1,
             'size': 20,
             'school_id': university_id,
             'special_group': '',
             'uri': 'apidata/api/gk/score/special'
         }
-        req_qs = []
-        lk_major_score_q = {'local_type_id': 1}
-        for k, v in major_score_q.items():
-            lk_major_score_q[k] = v
-
-        wk_major_score_q = {'local_type_id': 2}
-        for k, v in major_score_q.items():
-            wk_major_score_q[k] = v
-
-        req_qs.append(lk_major_score_q)
-        req_qs.append(wk_major_score_q)
-
-        for q in req_qs:
-            yield Request(
-                url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
-                callback=self.parse_major_score,
-                cb_kwargs={'q': major_score_q, 'university_id': university_id, 'api': True}
-            )
+        yield Request(
+            url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
+            callback=self.parse_major_score,
+            cb_kwargs={'q': q, 'university_id': university_id, 'api': True}
+        )
 
     def create_admissions_plan_reqs(self, university_id, province_id) -> Iterable[Request]:
-        admissions_plan_q = {
+        q = {
             'local_province_id': province_id,
             'school_id': university_id,
             'size': 20,
@@ -194,24 +177,12 @@ class UniversitySpider(scrapy.Spider):
             'special_group': '',
             'uri': 'apidata/api/gkv3/plan/school'
         }
-
-        req_qs = []
-        lk_admissions_plan_q = {'local_type_id': 1}
-        for k, v in admissions_plan_q.items():
-            lk_admissions_plan_q[k] = v
-        wk_admissions_plan_q = {'local_type_id': 2}
-        for k, v in admissions_plan_q.items():
-            wk_admissions_plan_q[k] = v
-
-        req_qs.append(lk_admissions_plan_q)
-        req_qs.append(wk_admissions_plan_q)
-
-        for q in req_qs:
-            yield Request(
-                url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
-                callback=self.parse_admissions_plan_list,
-                cb_kwargs={'q': q, 'university_id': university_id, 'api': True, 'province_id': province_id}
-            )
+        yield Request(
+            url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
+            callback=self.parse_admissions_plan_list,
+            cb_kwargs={'q': q, 'university_id': university_id,
+                       'api': True, 'province_id': province_id}
+        )
 
     def parse_university_intro(self, response: TextResponse, **kwargs):
         university = kwargs['university']
@@ -235,6 +206,7 @@ class UniversitySpider(scrapy.Spider):
                 major['zh_name'] = submajor['special_name']
                 major['edu_duration'] = submajor['limit_year']
                 major['code'] = submajor['code']
+                major['edu_level'] = submajor['type_name']
                 yield Request(
                     url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/special/{major["id"]}.json',
                     callback=self.parse_major_detail,
@@ -243,7 +215,9 @@ class UniversitySpider(scrapy.Spider):
     def parse_major_detail(self, response: TextResponse, **kwargs):
         major = kwargs['major']
         json_data = json.loads(response.body)
-        major['introduction'] = parse('$.data.content').find(json_data)[0].value
+        data = parse('$.data').find(json_data)[0].value
+        major['introduction'] = data.get('content', '')
+        major['graduate'] = data.get('degree', '')
         yield major
 
     def parse_major_score(self, response: TextResponse, **kwargs):
@@ -275,6 +249,9 @@ class UniversitySpider(scrapy.Spider):
 
             major_score['province_name'] = item.get('local_province_name', '')
             major_score['province_id'] = R_PROVINCE_MAPPING_META.get(major_score['province_name']) or ''
+
+            major_score['min_range'] = item.get('min_range', '')
+            major_score['min_rank_range'] = item.get('min_rank_range', '')
 
             yield major_score
 
@@ -312,6 +289,9 @@ class UniversitySpider(scrapy.Spider):
 
             admissions_plan['province_id'] = province_id
             admissions_plan['province_name'] = P_PROVINCE_MAPPING_META[province_id]
+
+            admissions_plan['cond'] = plan['sp_info']
+            admissions_plan['edu_dur'] = plan['length']
 
             yield admissions_plan
 

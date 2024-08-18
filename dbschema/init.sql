@@ -58,46 +58,51 @@ create table major
     university_id   int(11) comment '学校ID'
 ) comment '专业信息';
 
-create table major_score
+CREATE TABLE `major_score`
 (
-    id                    int primary key auto_increment,
-    str_id                varchar(32) comment '原始字符串ID，标识唯一性',
-    subject_name          varchar(64) comment '学科名称',
-    avg                   float(10, 2) comment '平均分',
-    max                   float(10, 2) comment '最大分',
-    min                   float(10, 2) comment '最低分',
-    min_ranking           int(11) comment '最低位次',
+    `id`                    int NOT NULL AUTO_INCREMENT,
+    `str_id`                varchar(32) DEFAULT NULL COMMENT '原始字符串ID，标识唯一性',
+    `subject_name`          varchar(64) DEFAULT NULL COMMENT '学科名称',
+    `avg`                   varchar(16) DEFAULT NULL COMMENT '平均分',
+    `max`                   varchar(16) DEFAULT NULL COMMENT '最大分',
+    `min`                   varchar(16) DEFAULT NULL COMMENT '最低分',
+    `min_ranking`           varchar(16) DEFAULT NULL COMMENT '最低位次',
+    `batch_num_name`        varchar(32) DEFAULT NULL COMMENT '批次 本科1批 2批',
+    `subject_scopes_name`   varchar(32) DEFAULT NULL COMMENT '学科领域',
+    `subject_category_name` varchar(32) DEFAULT NULL COMMENT '学科类型名称',
+    `major_id`              int         DEFAULT NULL COMMENT '专业ID',
+    `university_id`         int         DEFAULT NULL COMMENT '学校ID',
+    `year`                  varchar(16) DEFAULT NULL COMMENT '年份',
+    `province_id`           int         DEFAULT NULL COMMENT '省份ID',
+    `province_name`         varchar(32) DEFAULT NULL COMMENT '省份名称',
+    `min_range`             varchar(64) DEFAULT NULL COMMENT '最低分范围',
+    `min_rank_range`        varchar(64) DEFAULT NULL COMMENT '最低位次范围',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `strid` (`str_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci COMMENT ='专业分数线';
 
-    batch_num_name        varchar(32) comment '批次 本科1批 2批',
-
-    subject_scopes_name   varchar(32) comment '学科领域',
-    subject_category_name varchar(32) comment '学科类型名称',
-
-    major_id              int(11) comment '专业ID',
-    university_id         int(11) comment '学校ID',
-    year                  varchar(16) comment '年份',
-
-    province_id           int(11) comment '省份ID',
-    province_name         varchar(32) comment '省份名称'
-) comment '专业分数线';
-
-create table admissions_plan
+CREATE TABLE `admissions_plan`
 (
-    id                 int(11) primary key auto_increment,
-    major_name         varchar(64) comment '专业名称',
-    admissions_stu_num int(11) comment '计划招生人数',
-    edu_fee            int(11) comment '学费',
-    university_id      int(11) comment '学校ID',
-    major_code         varchar(32) comment '专业代码编号',
-    batch_num_name     varchar(32) comment '批次 本科1批 2批',
-
-    subject_name       varchar(16) comment '学科 文科理科',
-
-    year               varchar(16),
-
-    province_id        int(11),
-    province_name      varchar(16) comment '省份'
-);
+    `id`                 int NOT NULL AUTO_INCREMENT,
+    `major_name`         varchar(64) DEFAULT NULL COMMENT '专业名称',
+    `admissions_stu_num` int         DEFAULT NULL COMMENT '计划招生人数',
+    `edu_fee`            varchar(64) DEFAULT NULL COMMENT '学费',
+    `university_id`      int         DEFAULT NULL COMMENT '学校ID',
+    `major_code`         varchar(32) DEFAULT NULL COMMENT '专业代码编号',
+    `batch_num_name`     varchar(32) DEFAULT NULL COMMENT '批次 本科1批 2批',
+    `subject_name`       varchar(16) DEFAULT NULL COMMENT '学科 文科理科',
+    `year`               varchar(16) DEFAULT NULL,
+    `province_id`        int         DEFAULT NULL,
+    `province_name`      varchar(16) DEFAULT NULL COMMENT '省份',
+    `cond`               varchar(64) DEFAULT NULL COMMENT '选科要求',
+    `edu_dur`            varchar(64) DEFAULT NULL COMMENT '学制 4年 ｜ 5年',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_k` (`university_id`, `year`, `major_name`, `province_id`, `batch_num_name`, `subject_name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_0900_ai_ci;
 
 create table admissions_news
 (

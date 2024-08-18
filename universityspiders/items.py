@@ -69,8 +69,8 @@ class MajorScore(scrapy.Item):
 
     batch_num_name = scrapy.Field()  # 本科1批 本科2批
 
-    course_scopes_name = scrapy.Field()
-    course_category_name = scrapy.Field()
+    subject_scopes_name = scrapy.Field()
+    subject_category_name = scrapy.Field()
 
     major_id = scrapy.Field()
     university_id = scrapy.Field()
@@ -78,6 +78,9 @@ class MajorScore(scrapy.Item):
 
     province_id = scrapy.Field()
     province_name = scrapy.Field()
+
+    min_range = scrapy.Field()
+    min_rank_range = scrapy.Field()
 
 
 class AdmissionsPlan(scrapy.Item):
@@ -97,6 +100,9 @@ class AdmissionsPlan(scrapy.Item):
 
     province_id = scrapy.Field()
     province_name = scrapy.Field()
+
+    cond = scrapy.Field()  # 选科要求
+    edu_dur = scrapy.Field()  # 学制 4年 ｜ 5年
 
 
 class AdmissionsNews(scrapy.Item):
