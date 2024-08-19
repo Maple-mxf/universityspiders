@@ -5,8 +5,6 @@
 招生咨询列表：https://static-data.gaokao.cn/www/2.0/school/140/news/list.json
 招生咨询详情：https://static-data.gaokao.cn/www/2.0/school/357/news/68000/213748.json
 
-docker run -p 3306:3306 \
---name mysql8 \
---privileged=true \
--e MYSQL_ROOT_PASSWORD=123456 \
--d mysql:8.0
+查询院校分数线分页：https://api.zjzw.cn/web/api/?page=1&school_id=357&size=20&uri=apidata/api/gk/score/province
+
+查询学生就业数据：https://static-data.gaokao.cn/www/2.0/school/140/pc_jobdetail.json

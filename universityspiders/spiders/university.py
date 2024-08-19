@@ -23,7 +23,11 @@ from universityspiders.items import (
     Major,
     MajorScore,
     AdmissionsPlan,
-    AdmissionsNews
+    AdmissionsNews,
+    UniversityScore,
+    EmploymentRegionRateMetric,
+    CompanyAttrRateMetric,
+    CompanyMetric
 )
 from universityspiders.spiders import _parse_api_resp
 
@@ -54,6 +58,24 @@ class UniversitySpider(scrapy.Spider):
             yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
                           callback=self.parse_news_list,
                           cb_kwargs={'university_id': university_id, 'api': True})
+
+            # 院校分数线数据采集
+            u_score_q = {
+                'page': 1,
+                'school_id': university_id,
+                'size': 20,
+                'uri': 'apidata/api/gk/score/province'
+            }
+            yield Request(
+                url=f'https://api.zjzw.cn/web/api/?{urlencode(u_score_q)}',
+                callback=self.parse_university_score,
+                cb_kwargs={'university_id': university_id, 'q': u_score_q, 'api': True}
+            )
+
+            yield Request(
+                url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_jobdetail.json',
+                cb_kwargs={'university_id': university_id}
+            )
             break
 
     def parse_news_list(self, response: TextResponse, **kwargs):
@@ -307,3 +329,69 @@ class UniversitySpider(scrapy.Spider):
                     'province_id': province_id
                 }
             )
+
+    def parse_university_score(self, response: TextResponse, **kwargs):
+        """"""
+        university_id = kwargs['university_id']
+        success, payload = _parse_api_resp(resp_text=response.text)
+        if not success:
+            return
+        for item in payload:
+            us = UniversityScore()
+            us['university_id'] = university_id
+            us['year'] = item.get('year')
+            us['admissions_batch_num'] = item.get('local_batch_name')
+            us['admissions_type'] = item.get('zslx_name')
+            us['min'] = item.get('min')
+            us['min_ranking'] = item.get('min_section')
+            us['max'] = item.get('max')
+            us['province_name'] = item.get('local_province_name')
+            us['province_control_score'] = item.get('proscore')
+            us['subject_category'] = item.get('local_type_name')
+            us['province_id'] = R_PROVINCE_MAPPING_META.get(item.get('local_province_name'))
+            yield us
+
+        if len(payload) >= 20:
+            q = kwargs['q']
+            q['page'] = q['page'] + 1
+            yield Request(
+                url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
+                callback=self.parse_university_score,
+                cb_kwargs={'university_id': university_id, 'q': q, 'api': True})
+
+    def parse_employment(self, response: TextResponse, **kwargs):
+        university_id = kwargs['university_id']
+        success, payload = _parse_api_resp(resp_text=response.text)
+        if not success:
+            return  # TODO 记录失败请求
+
+        if payload is None:
+            return
+
+        region_metric = payload.get('province')
+        if region_metric is not None:
+            for item in region_metric:
+                m = EmploymentRegionRateMetric()
+                m['university_id'] = university_id
+                m['province_name'] = item.get('province_name')
+                m['year'] = item.get('year')
+                m['rate'] = item.get('rate')
+                yield m
+
+        company_attr_metric = payload.get('attr')
+        if company_attr_metric is not None:
+            for k, v in company_attr_metric.items():
+                m = CompanyAttrRateMetric()
+                m['university_id'] = university_id
+                m['name'] = k
+                m['rate'] = v
+                yield m
+
+        company_metric = payload.get('company')
+        if company_metric is not None:
+            for k, v in company_metric.items():
+                m = CompanyMetric()
+                m['university_id'] = university_id
+                m['name'] = k
+                m['sort'] = v
+                yield m

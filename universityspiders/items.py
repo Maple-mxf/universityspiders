@@ -113,3 +113,41 @@ class AdmissionsNews(scrapy.Item):
     type_id = scrapy.Field()
     type_name = scrapy.Field()
     publish_date = scrapy.Field()
+
+
+class UniversityScore(scrapy.Item):
+    year = scrapy.Field()
+    admissions_batch_num = scrapy.Field()  # 录取批次
+    admissions_type = scrapy.Field()  # 招生类型 普通类 ｜ 地方专项计划	｜ 国家专项计划
+    min = scrapy.Field()  # 最低分  TODO 这里的最低分可能是个 -
+    min_ranking = scrapy.Field()  # 最低位次
+
+    max = scrapy.Field()
+    avg = scrapy.Field()
+    avg_ranking = scrapy.Field()
+
+    province_id = scrapy.Field()
+    province_name = scrapy.Field()
+
+    subject_category = scrapy.Field()
+    province_control_score = scrapy.Field()
+    university_id = scrapy.Field()
+
+
+class EmploymentRegionRateMetric(scrapy.Item):
+    university_id = scrapy.Field()
+    rate = scrapy.Field()
+    province_name = scrapy.Field()
+    year = scrapy.Field()
+
+
+class CompanyAttrRateMetric(scrapy.Item):
+    name = scrapy.Field()
+    rate = scrapy.Field()
+    university_id = scrapy.Field()
+
+
+class CompanyMetric(scrapy.Item):
+    university_id = scrapy.Field()
+    name = scrapy.Field()
+    sort = scrapy.Field()

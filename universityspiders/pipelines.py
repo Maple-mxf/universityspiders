@@ -6,7 +6,12 @@ from universityspiders.items import (
     University,
     Major,
     MajorScore,
-    AdmissionsPlan, AdmissionsNews
+    AdmissionsPlan,
+    AdmissionsNews,
+    UniversityScore,
+    EmploymentRegionRateMetric,
+    CompanyAttrRateMetric,
+    CompanyMetric
 )
 import pymysql
 import re
@@ -379,3 +384,42 @@ class AdmissionsNewsPipeline(Write2DBPipeline):
         if len(self.data) > 2:
             self.write_batch_data()
             self.data.clear()
+
+
+class UniversityScorePipeline(Write2DBPipeline):
+    def close_spider(self, spider):
+        super().close_spider(spider)
+
+    def process_item(self, item: scrapy.Item, spider):
+        if isinstance(item, UniversityScore):
+            return self._process_item(item, spider)
+        return item
+
+    def _process_item(self, item: scrapy.Item, spider):
+        """"""
+
+    def write_batch_data(self):
+        """"""
+
+
+class MetricScorePipeline(Write2DBPipeline):
+    def close_spider(self, spider):
+        super().close_spider(spider)
+
+    def process_item(self, item: scrapy.Item, spider):
+        if isinstance(item, EmploymentRegionRateMetric):
+            return self._process_region_metric_item(item)
+        elif isinstance(item, CompanyAttrRateMetric):
+            return self._process_companyattr_metric_item(item)
+        elif isinstance(item, CompanyMetric):
+            return self._process_company_metric_item(item)
+        return item
+
+    def _process_region_metric_item(self, item: scrapy.Item):
+        """"""
+
+    def _process_companyattr_metric_item(self, item: scrapy.Item):
+        """"""
+
+    def _process_company_metric_item(self, item: scrapy.Item):
+        """"""
