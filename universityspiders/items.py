@@ -133,6 +133,10 @@ class UniversityScore(scrapy.Item):
     province_control_score = scrapy.Field()
     university_id = scrapy.Field()
 
+    cond = scrapy.Field()
+    major_group_id = scrapy.Field()
+    major_group_name = scrapy.Field()
+
 
 class EmploymentRegionRateMetric(scrapy.Item):
     university_id = scrapy.Field()
@@ -151,3 +155,13 @@ class CompanyMetric(scrapy.Item):
     university_id = scrapy.Field()
     name = scrapy.Field()
     sort = scrapy.Field()
+
+
+class ErrorDescription(scrapy.Item):
+    api_name = scrapy.Field()
+    university_id = scrapy.Field()
+    url = scrapy.Field()
+    q = scrapy.Field()
+    body = scrapy.Field()
+    method = scrapy.Field()
+    kwargs = scrapy.Field()

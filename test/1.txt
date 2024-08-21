@@ -1,0 +1,9 @@
+       on duplicate key update
+       `min` = values(`min`),
+       `min_ranking` = values(`min_ranking`),
+       `max` = values(`max`),
+       `avg` = values(`avg`),
+       `avg_ranking` = values(`avg_ranking`),
+       `province_control_score` = values(`province_control_score`),
+       `cond` = values(`cond`),
+       `major_group_name` = values(`major_group_name`)

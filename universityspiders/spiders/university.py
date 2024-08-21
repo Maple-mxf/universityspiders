@@ -29,7 +29,12 @@ from universityspiders.items import (
     CompanyAttrRateMetric,
     CompanyMetric
 )
-from universityspiders.spiders import _parse_api_resp
+from universityspiders.spiders import (
+    _parse_api_resp,
+    init_majorscore_req_fn,
+    init_admissionsplan_req_fn,
+    init_universityscore_req_fn
+)
 
 
 class UniversitySpider(scrapy.Spider):
@@ -54,28 +59,47 @@ class UniversitySpider(scrapy.Spider):
             # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{model["id"]}/info.json',
             #               callback=self.parse_university_detail,
             #               cb_kwargs={'university': model})
-
-            yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
-                          callback=self.parse_news_list,
-                          cb_kwargs={'university_id': university_id, 'api': True})
+            #
+            # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
+            #               callback=self.parse_news_list,
+            #               cb_kwargs={'university_id': university_id, 'api': True})
 
             # 院校分数线数据采集
-            u_score_q = {
-                'page': 1,
-                'school_id': university_id,
-                'size': 20,
-                'uri': 'apidata/api/gk/score/province'
-            }
+            # universityscore_q = init_universityscore_req_fn(university_id)
+            # yield Request(
+            #     url=f'https://api.zjzw.cn/web/api/?{urlencode(universityscore_q)}',
+            #     callback=self.parse_university_score,
+            #     cb_kwargs={'university_id': university_id, 'q': universityscore_q, 'api': True}
+            # )
+
+            # 专业信息数据采集
+            # yield Request(
+            #     url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_special.json',
+            #     callback=self.parse_university_professional,
+            #     cb_kwargs={'university_id': university_id, 'api': True}
+            # )
+
+            # 招生计划只采集山东的
+            # admissions_plan_q = init_admissionsplan_req_fn()
+            # yield Request(
+            #     url=f'https://api.zjzw.cn/web/api/?{urlencode(admissions_plan_q)}',
+            #     callback=self.parse_admissions_plan_list,
+            #     cb_kwargs={'q': admissions_plan_q, 'university_id': university_id, 'api': True, 'province_id': 37}
+            # )
+
+            # 专业分数线数据采集
+            major_score_q = init_majorscore_req_fn(university_id)
             yield Request(
-                url=f'https://api.zjzw.cn/web/api/?{urlencode(u_score_q)}',
-                callback=self.parse_university_score,
-                cb_kwargs={'university_id': university_id, 'q': u_score_q, 'api': True}
+                url=f'https://api.zjzw.cn/web/api/?{urlencode(major_score_q)}',
+                callback=self.parse_major_score,
+                cb_kwargs={'q': major_score_q, 'university_id': university_id, 'api': True}
             )
 
-            yield Request(
-                url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_jobdetail.json',
-                cb_kwargs={'university_id': university_id}
-            )
+            # yield Request(
+            #     url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_jobdetail.json',
+            #     callback=self.parse_metric,
+            #     cb_kwargs={'university_id': university_id}
+            # )
             break
 
     def parse_news_list(self, response: TextResponse, **kwargs):
@@ -95,7 +119,7 @@ class UniversitySpider(scrapy.Spider):
         news = AdmissionsNews()
 
         success, data = _parse_api_resp(resp_text=response.text)
-        if success is False:
+        if not success:
             return
 
         news['id'] = data.get('id')
@@ -157,50 +181,6 @@ class UniversitySpider(scrapy.Spider):
             url=f'https://static-data.gaokao.cn/www/2.0/school/{university["id"]}/detail/69000.json',
             callback=self.parse_university_intro,
             cb_kwargs={'university': university, 'api': True}
-        )
-
-        # yield Request(
-        #     url=f'https://static-data.gaokao.cn/www/2.0/school/{university["id"]}/pc_special.json',
-        #     callback=self.parse_university_professional,
-        #     cb_kwargs={'university_id': university['id'], 'api': True}
-        # )
-
-        #
-        # # 招生计划只采集山东的
-        for req in self.create_admissions_plan_reqs(university['id'], 37):
-            yield req
-        #
-        # for req in self.create_major_score_reqs(university['id']):
-        #     yield req
-
-    def create_major_score_reqs(self, university_id) -> Iterable[Request]:
-        q = {
-            'page': 1,
-            'size': 20,
-            'school_id': university_id,
-            'special_group': '',
-            'uri': 'apidata/api/gk/score/special'
-        }
-        yield Request(
-            url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
-            callback=self.parse_major_score,
-            cb_kwargs={'q': q, 'university_id': university_id, 'api': True}
-        )
-
-    def create_admissions_plan_reqs(self, university_id, province_id) -> Iterable[Request]:
-        q = {
-            'local_province_id': province_id,
-            'school_id': university_id,
-            'size': 20,
-            'page': 1,
-            'special_group': '',
-            'uri': 'apidata/api/gkv3/plan/school'
-        }
-        yield Request(
-            url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
-            callback=self.parse_admissions_plan_list,
-            cb_kwargs={'q': q, 'university_id': university_id,
-                       'api': True, 'province_id': province_id}
         )
 
     def parse_university_intro(self, response: TextResponse, **kwargs):
@@ -293,6 +273,9 @@ class UniversitySpider(scrapy.Spider):
         if resp_code == '1069':
             print(f'parse_major_score#Request URL = {response.url}, cb_kwargs = {response.cb_kwargs}')
             return
+
+        _parse_api_resp(resp_text=resp_code)
+
         plan_list = parse('$.data.item').find(json_data)[0].value
         for plan in plan_list:
             admissions_plan = AdmissionsPlan()
@@ -331,12 +314,14 @@ class UniversitySpider(scrapy.Spider):
             )
 
     def parse_university_score(self, response: TextResponse, **kwargs):
-        """"""
         university_id = kwargs['university_id']
         success, payload = _parse_api_resp(resp_text=response.text)
         if not success:
             return
-        for item in payload:
+
+        itemlist = payload['item']
+
+        for item in itemlist:
             us = UniversityScore()
             us['university_id'] = university_id
             us['year'] = item.get('year')
@@ -349,9 +334,13 @@ class UniversitySpider(scrapy.Spider):
             us['province_control_score'] = item.get('proscore')
             us['subject_category'] = item.get('local_type_name')
             us['province_id'] = R_PROVINCE_MAPPING_META.get(item.get('local_province_name'))
+            us['cond'] = item.get('sg_info')
+            us['major_group_id'] = item.get('special_group')
+            us['major_group_name'] = item.get('sg_name')
+
             yield us
 
-        if len(payload) >= 20:
+        if len(itemlist) >= 20:
             q = kwargs['q']
             q['page'] = q['page'] + 1
             yield Request(
@@ -359,7 +348,7 @@ class UniversitySpider(scrapy.Spider):
                 callback=self.parse_university_score,
                 cb_kwargs={'university_id': university_id, 'q': q, 'api': True})
 
-    def parse_employment(self, response: TextResponse, **kwargs):
+    def parse_metric(self, response: TextResponse, **kwargs):
         university_id = kwargs['university_id']
         success, payload = _parse_api_resp(resp_text=response.text)
         if not success:

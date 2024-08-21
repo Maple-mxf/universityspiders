@@ -42,19 +42,19 @@ CREATE TABLE `major`
 (
     `id`              int         NOT NULL AUTO_INCREMENT,
     `zh_name`         varchar(64) NOT NULL,
-    `code`            varchar(64)   DEFAULT NULL COMMENT '专业代码',
-    `edu_level`       varchar(16)   DEFAULT NULL COMMENT '教育层次，A代表本科 B代表专科',
-    `course_scopes`   varchar(16)   DEFAULT NULL COMMENT '专业领域 例如工学 艺术学',
-    `course_category` varchar(16)   DEFAULT NULL COMMENT '	学科类别： ',
-    `edu_duration`    varchar(16)   DEFAULT NULL COMMENT '学制',
-    `graduate`        varchar(16)   DEFAULT NULL COMMENT '授予学位',
-    `introduction`    varchar(2048) DEFAULT NULL COMMENT '简介',
-    `university_id`   int           DEFAULT NULL COMMENT '学校ID',
+    `code`            varchar(64) DEFAULT NULL COMMENT '专业代码',
+    `edu_level`       varchar(16) DEFAULT NULL COMMENT '教育层次，A代表本科 B代表专科',
+    `course_scopes`   varchar(16) DEFAULT NULL COMMENT '专业领域 例如工学 艺术学',
+    `course_category` varchar(16) DEFAULT NULL COMMENT '	学科类别： ',
+    `edu_duration`    varchar(16) DEFAULT NULL COMMENT '学制',
+    `graduate`        varchar(16) DEFAULT NULL COMMENT '授予学位',
+    `introduction`    text        DEFAULT NULL COMMENT '简介',
+    `university_id`   int         DEFAULT NULL COMMENT '学校ID',
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 2153358
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci COMMENT ='专业信息';
+  COLLATE = utf8mb4_0900_ai_ci COMMENT ='专业信息'
 
 CREATE TABLE `major_score`
 (

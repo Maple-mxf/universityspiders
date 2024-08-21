@@ -8,3 +8,21 @@
 查询院校分数线分页：https://api.zjzw.cn/web/api/?page=1&school_id=357&size=20&uri=apidata/api/gk/score/province
 
 查询学生就业数据：https://static-data.gaokao.cn/www/2.0/school/140/pc_jobdetail.json
+
+
+on duplicate key update
+                    subject_name=values(subject_name),
+                    `avg`=values(`avg`),
+                    `max`=values(`max`),
+                    `min`=values(`min`),
+                    min_ranking=values(min_ranking),
+                    batch_num_name=values(batch_num_name),
+                    subject_scopes_name=values(subject_scopes_name),
+                    subject_category_name=values(subject_category_name),
+                    major_id=values(major_id),
+                    university_id=values(university_id),
+                    `year`=values(`year`),
+                    province_id=values(province_id),
+                    province_name=values(province_name),
+                    min_range=values(min_range),
+                    min_rank_range=values(min_rank_range)

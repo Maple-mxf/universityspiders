@@ -1,2 +1,5 @@
-d = {1: '山东'}
-print(d['1'])
+from universityspiders.items import UniversityScore
+
+score = UniversityScore()
+
+print(score.get('avg'))

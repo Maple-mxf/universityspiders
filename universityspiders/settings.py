@@ -59,6 +59,8 @@ ITEM_PIPELINES = {
     "universityspiders.pipelines.MajorScorePipeline": 302,
     "universityspiders.pipelines.AdmissionsPlanPipeline": 303,
     "universityspiders.pipelines.AdmissionsNewsPipeline": 303,
+    "universityspiders.pipelines.UniversityScorePipeline": 304,
+    "universityspiders.pipelines.UniversityMetricPipeline": 305,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -94,4 +96,4 @@ DB_PORT = 3306
 DB_USER = 'root'
 DB_PWD = '123456'
 DB_DATABASE = 'universityspiders'
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'INFO'
