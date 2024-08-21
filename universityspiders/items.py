@@ -157,7 +157,7 @@ class CompanyMetric(scrapy.Item):
     sort = scrapy.Field()
 
 
-class ErrorDescription(scrapy.Item):
+class ErrorResponse(scrapy.Item):
     api_name = scrapy.Field()
     university_id = scrapy.Field()
     url = scrapy.Field()

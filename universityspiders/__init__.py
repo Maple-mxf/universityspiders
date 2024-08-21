@@ -1,6 +1,10 @@
 import os
 import json
 from jsonpath_ng import jsonpath, parse
+from enum import Enum
+import scrapy
+
+from universityspiders.items import ErrorResponse
 
 
 def read_university_meta():
@@ -42,3 +46,34 @@ def read_university_detail_meta() -> dict:
 P_PROVINCE_MAPPING_META, R_PROVINCE_MAPPING_META = read_province_mapping_meta()
 UNIVERSITY_META = read_university_meta()
 UNIVERSITY_DETAIL_META = read_university_detail_meta()
+
+
+# API AIN定义
+class ApiTargetConsts(Enum):
+    DESCRIBE_UNIVERSITY_DETAIL = 'DescribeUniversityDetail'
+    DESCRIBE_NEWS_LIST = 'DescribeNewsList'
+    DESCRIBE_NEWS_DETAIL = 'DescribeNewsDetail'
+    DESCRIBE_UNIVERSITY_SCORE = 'DescribeUniversityScore'
+    DESCRIBE_MAJOR_LIST = 'DescribeMajorList'
+    DESCRIBE_MAJOR_DETAIL = 'DescribeMajorDetail'
+    DESCRIBE_ADMISSIONS_PLAN_LIST = 'DescribeAdmissionsPlanList'
+    DESCRIBE_MAJOR_SCORE_LIST = 'DescribeMajorScoreList'
+    DESCRIBE_METRIC = 'DescribeMetric'
+
+
+def _make_apitarget(api: ApiTargetConsts,
+                    university_id: str,
+                    response: scrapy.http.Response,
+                    **kwargs):
+    er = ErrorResponse()
+    request: scrapy.Request = response.request
+    er['api_name'] = api.value
+    er['university_id'] = university_id
+    er['url'] = request.url
+    er['body'] = request.body
+    er['method'] = request.method
+    if kwargs:
+        er['q'] = kwargs.get('q')
+        er['kwargs'] = kwargs.get('kwargs', None)
+
+    return er

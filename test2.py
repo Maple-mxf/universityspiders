@@ -1,4 +1,5 @@
 import json
+from typing import Final
 
-with open('1.json', mode='r', encoding='utf=8') as file:
-    print(len(json.load(file)['data']))
+DESCRIBE_UNIVERSITY_DETAIL: Final[str] = ''
+print(DESCRIBE_UNIVERSITY_DETAIL)

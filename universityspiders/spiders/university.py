@@ -16,7 +16,9 @@ from scrapy.http import (
 from universityspiders import (
     UNIVERSITY_META,
     P_PROVINCE_MAPPING_META,
-    R_PROVINCE_MAPPING_META
+    R_PROVINCE_MAPPING_META,
+    _make_apitarget,
+    ApiTargetConsts
 )
 from universityspiders.items import (
     University,
@@ -56,36 +58,35 @@ class UniversitySpider(scrapy.Spider):
             model['id'] = university_id
             model['logo'] = f'https://static-data.gaokao.cn/upload/logo/{university_id}.jpg'
 
-            # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{model["id"]}/info.json',
-            #               callback=self.parse_university_detail,
-            #               cb_kwargs={'university': model})
-            #
-            # yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
-            #               callback=self.parse_news_list,
-            #               cb_kwargs={'university_id': university_id, 'api': True})
+            yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{model["id"]}/info.json',
+                          callback=self.parse_university_detail,
+                          cb_kwargs={'university': model})
+            yield Request(url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/news/list.json',
+                          callback=self.parse_news_list,
+                          cb_kwargs={'university_id': university_id, 'api': True})
 
             # 院校分数线数据采集
-            # universityscore_q = init_universityscore_req_fn(university_id)
-            # yield Request(
-            #     url=f'https://api.zjzw.cn/web/api/?{urlencode(universityscore_q)}',
-            #     callback=self.parse_university_score,
-            #     cb_kwargs={'university_id': university_id, 'q': universityscore_q, 'api': True}
-            # )
+            universityscore_q = init_universityscore_req_fn(university_id)
+            yield Request(
+                url=f'https://api.zjzw.cn/web/api/?{urlencode(universityscore_q)}',
+                callback=self.parse_university_score,
+                cb_kwargs={'university_id': university_id, 'q': universityscore_q, 'api': True}
+            )
 
             # 专业信息数据采集
-            # yield Request(
-            #     url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_special.json',
-            #     callback=self.parse_university_professional,
-            #     cb_kwargs={'university_id': university_id, 'api': True}
-            # )
+            yield Request(
+                url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_special.json',
+                callback=self.parse_university_professional,
+                cb_kwargs={'university_id': university_id, 'api': True}
+            )
 
             # 招生计划只采集山东的
-            # admissions_plan_q = init_admissionsplan_req_fn()
-            # yield Request(
-            #     url=f'https://api.zjzw.cn/web/api/?{urlencode(admissions_plan_q)}',
-            #     callback=self.parse_admissions_plan_list,
-            #     cb_kwargs={'q': admissions_plan_q, 'university_id': university_id, 'api': True, 'province_id': 37}
-            # )
+            admissions_plan_q = init_admissionsplan_req_fn()
+            yield Request(
+                url=f'https://api.zjzw.cn/web/api/?{urlencode(admissions_plan_q)}',
+                callback=self.parse_admissions_plan_list,
+                cb_kwargs={'q': admissions_plan_q, 'university_id': university_id, 'api': True, 'province_id': 37}
+            )
 
             # 专业分数线数据采集
             major_score_q = init_majorscore_req_fn(university_id)
@@ -95,17 +96,23 @@ class UniversitySpider(scrapy.Spider):
                 cb_kwargs={'q': major_score_q, 'university_id': university_id, 'api': True}
             )
 
-            # yield Request(
-            #     url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_jobdetail.json',
-            #     callback=self.parse_metric,
-            #     cb_kwargs={'university_id': university_id}
-            # )
+            # 就业指标数据采集
+            yield Request(
+                url=f'https://static-data.gaokao.cn/www/2.0/school/{university_id}/pc_jobdetail.json',
+                callback=self.parse_metric,
+                cb_kwargs={'university_id': university_id}
+            )
             break
 
     def parse_news_list(self, response: TextResponse, **kwargs):
         university_id = kwargs['university_id']
-        json_data = json.loads(response.text)
-        newslist = parse('$.data').find(json_data)[0].value
+
+        success, newslist = _parse_api_resp(resp_text=response.text)
+        if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_NEWS_DETAIL,
+                                  university_id=university_id,
+                                  response=response)
+            return
 
         for news in newslist:
             yield Request(
@@ -120,6 +127,9 @@ class UniversitySpider(scrapy.Spider):
 
         success, data = _parse_api_resp(resp_text=response.text)
         if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_NEWS_DETAIL,
+                                  university_id,
+                                  response)
             return
 
         news['id'] = data.get('id')
@@ -135,9 +145,12 @@ class UniversitySpider(scrapy.Spider):
     def parse_university_detail(self, response: HtmlResponse, **kwargs):
         university = kwargs['university']
 
-        json_text = bytes(response.text, response.encoding).decode('unicode_escape')
-        json_data = json.loads(json_text)
-        data = parse('$.data').find(json_data)[0].value
+        success, data = _parse_api_resp(resp_text=response.text)
+        if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_UNIVERSITY_DETAIL,
+                                  university_id=university['id'],
+                                  response=response)
+            return
 
         university['official_website'] = ','.join(
             [data.get('site', ''), data.get('school_site', '')]
@@ -191,9 +204,14 @@ class UniversitySpider(scrapy.Spider):
 
     def parse_university_professional(self, response: TextResponse, **kwargs):
         university_id = kwargs['university_id']
-        json_data = json.loads(response.body)
+        success, data = _parse_api_resp(resp_text=response.text)
+        if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_MAJOR_LIST,
+                                  university_id=university_id,
+                                  response=response)
+            return
 
-        node_list: list = parse('$.data.special').find(json_data)
+        node_list: list = data.get('special', [])
         for category in node_list[0].value:
             course_category = category['name']
             for submajor in category['special']:
@@ -213,6 +231,15 @@ class UniversitySpider(scrapy.Spider):
 
     def parse_major_detail(self, response: TextResponse, **kwargs):
         major = kwargs['major']
+        university_id = kwargs['university_id']
+
+        success, data = _parse_api_resp(resp_text=response.text)
+        if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_MAJOR_DETAIL,
+                                  university_id=university_id,
+                                  response=response)
+            return
+
         json_data = json.loads(response.body)
         data = parse('$.data').find(json_data)[0].value
         major['introduction'] = data.get('content', '')
@@ -221,14 +248,18 @@ class UniversitySpider(scrapy.Spider):
 
     def parse_major_score(self, response: TextResponse, **kwargs):
         university_id = kwargs['university_id']
-        json_data = json.loads(response.body)
 
-        resp_code = parse('$.code').find(json_data)[0].value
-        if resp_code == '1069':
-            print(f'parse_major_score#Request URL = {response.url}, cb_kwargs = {response.cb_kwargs}')
+        success, data = _parse_api_resp(resp_text=response.text)
+        if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_MAJOR_SCORE_LIST,
+                                  university_id=university_id,
+                                  response=response,
+                                  kwargs={
+                                      'q': kwargs['q']
+                                  })
             return
 
-        major_score_list: list = parse('$.data.item').find(json_data)[0].value
+        major_score_list: list = data.get('item', [])
 
         for item in major_score_list:
             major_score = MajorScore()
@@ -256,8 +287,7 @@ class UniversitySpider(scrapy.Spider):
 
         q: dict = kwargs['q']
         page: int = q['page']
-        count: int = parse('$.data.numFound').find(json_data)[0].value
-        if len(major_score_list) >= 20 and count > page * 20:
+        if len(major_score_list) >= 20:
             q['page'] = page + 1
             yield Request(
                 url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
@@ -268,15 +298,18 @@ class UniversitySpider(scrapy.Spider):
     def parse_admissions_plan_list(self, response: TextResponse, **kwargs):
         university_id = kwargs['university_id']
         province_id = kwargs['province_id']
-        json_data = json.loads(response.body)
-        resp_code = parse('$.code').find(json_data)[0].value
-        if resp_code == '1069':
-            print(f'parse_major_score#Request URL = {response.url}, cb_kwargs = {response.cb_kwargs}')
+
+        success, data = _parse_api_resp(resp_text=response.text)
+        if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_ADMISSIONS_PLAN_LIST,
+                                  university_id=university_id,
+                                  response=response,
+                                  kwargs={
+                                      'q': kwargs['q']
+                                  })
             return
 
-        _parse_api_resp(resp_text=resp_code)
-
-        plan_list = parse('$.data.item').find(json_data)[0].value
+        plan_list = data.get('item', [])
         for plan in plan_list:
             admissions_plan = AdmissionsPlan()
             admissions_plan['major_name'] = plan['spname']
@@ -299,8 +332,7 @@ class UniversitySpider(scrapy.Spider):
 
         q: dict = kwargs['q']
         page: int = q['page']
-        count: int = parse('$.data.numFound').find(json_data)[0].value
-        if len(plan_list) >= 20 and count > page * 20:
+        if len(plan_list) >= 20:
             q['page'] = page + 1
             yield Request(
                 url=f'https://api.zjzw.cn/web/api/?{urlencode(q)}',
@@ -317,6 +349,9 @@ class UniversitySpider(scrapy.Spider):
         university_id = kwargs['university_id']
         success, payload = _parse_api_resp(resp_text=response.text)
         if not success:
+            yield _make_apitarget(ApiTargetConsts.DESCRIBE_UNIVERSITY_SCORE,
+                                  university_id=university_id,
+                                  response=response)
             return
 
         itemlist = payload['item']
@@ -352,7 +387,12 @@ class UniversitySpider(scrapy.Spider):
         university_id = kwargs['university_id']
         success, payload = _parse_api_resp(resp_text=response.text)
         if not success:
-            return  # TODO 记录失败请求
+            yield _make_apitarget(
+                ApiTargetConsts.DESCRIBE_METRIC,
+                university_id=university_id,
+                response=response
+            )
+            return
 
         if payload is None:
             return
