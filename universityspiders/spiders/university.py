@@ -176,9 +176,8 @@ class UniversitySpider(scrapy.Spider):
                                password=pwd,
                                database=db)
         cursor = conn.cursor()
-
         cursor.execute('select api_name, university_id, url, ctx_para from error_response where ctx_id=%s',
-                       (self.ctx_id))
+                       self.ctx_id)
         error_resp_list = cursor.fetchall()
 
         for error_resp in error_resp_list:

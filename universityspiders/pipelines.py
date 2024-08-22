@@ -1,4 +1,3 @@
-
 import scrapy
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
@@ -99,7 +98,6 @@ class UniversityPipeline(Write2DBPipeline):
         f985= %s,  
         f211=%s
         """
-
         self.cursor.execute(sqlscript,
                             (
                                 item['id'],
@@ -134,8 +132,6 @@ class UniversityPipeline(Write2DBPipeline):
                                 item.get('introduction', ''),
                                 item.get('f985', 0),
                                 item.get('f211', 0),
-
-                                # =====>
                                 item.get('zh_name', ''),
                                 item.get('logo', ''),
                                 item.get('official_website', ''),

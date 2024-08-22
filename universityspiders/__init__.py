@@ -78,6 +78,4 @@ def _make_apitarget(api: ApiTargetConsts,
     er['ctx_id'] = CTX_ID
     er['ctx_para'] = json.dumps(kwargs, ensure_ascii=False)
 
-
-
     return er

@@ -40,11 +40,11 @@ DEFAULT_REQUEST_HEADERS = {
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
-#    "universityspiders.middlewares.UniversityspidersSpiderMiddleware": 543,
+#    "universityspiders.middlewares.UniversitySpiderMiddleware": 543,
 # }
 
 DOWNLOADER_MIDDLEWARES = {
-    "universityspiders.middlewares.UniversityspidersDownloaderMiddleware": 100,
+    "universityspiders.middlewares.UniversityDownloaderMiddleware": 100,
 }
 
 # Enable or disable extensions

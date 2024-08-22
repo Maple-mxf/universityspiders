@@ -12,8 +12,4 @@ def m2(*args):
 
 # m2(*[1, 2, 3])
 
-a = False
-
-
-if a:
-    print(1)
+print(bool('False'))
