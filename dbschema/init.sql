@@ -48,13 +48,13 @@ CREATE TABLE `major`
     `course_category` varchar(16) DEFAULT NULL COMMENT '	学科类别： ',
     `edu_duration`    varchar(16) DEFAULT NULL COMMENT '学制',
     `graduate`        varchar(16) DEFAULT NULL COMMENT '授予学位',
-    `introduction`    text        DEFAULT NULL COMMENT '简介',
+    `introduction`    text COMMENT '简介',
     `university_id`   int         DEFAULT NULL COMMENT '学校ID',
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   AUTO_INCREMENT = 2153358
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci COMMENT ='专业信息'
+  COLLATE = utf8mb4_0900_ai_ci COMMENT ='专业信息';
 
 CREATE TABLE `major_score`
 (
@@ -78,27 +78,29 @@ CREATE TABLE `major_score`
     PRIMARY KEY (`id`),
     UNIQUE KEY `strid` (`str_id`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 14949
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci COMMENT ='专业分数线';
 
 CREATE TABLE `admissions_plan`
 (
     `id`                 int NOT NULL AUTO_INCREMENT,
-    `major_name`         varchar(64) DEFAULT NULL COMMENT '专业名称',
-    `admissions_stu_num` int         DEFAULT NULL COMMENT '计划招生人数',
-    `edu_fee`            varchar(64) DEFAULT NULL COMMENT '学费',
-    `university_id`      int         DEFAULT NULL COMMENT '学校ID',
-    `major_code`         varchar(32) DEFAULT NULL COMMENT '专业代码编号',
-    `batch_num_name`     varchar(32) DEFAULT NULL COMMENT '批次 本科1批 2批',
-    `subject_name`       varchar(16) DEFAULT NULL COMMENT '学科 文科理科',
-    `year`               varchar(16) DEFAULT NULL,
-    `province_id`        int         DEFAULT NULL,
-    `province_name`      varchar(16) DEFAULT NULL COMMENT '省份',
-    `cond`               varchar(64) DEFAULT NULL COMMENT '选科要求',
-    `edu_dur`            varchar(64) DEFAULT NULL COMMENT '学制 4年 ｜ 5年',
+    `major_name`         varchar(512) DEFAULT NULL COMMENT '专业名称',
+    `admissions_stu_num` int          DEFAULT NULL COMMENT '计划招生人数',
+    `edu_fee`            varchar(64)  DEFAULT NULL COMMENT '学费',
+    `university_id`      int          DEFAULT NULL COMMENT '学校ID',
+    `major_code`         varchar(32)  DEFAULT NULL COMMENT '专业代码编号',
+    `batch_num_name`     varchar(32)  DEFAULT NULL COMMENT '批次 本科1批 2批',
+    `subject_name`       varchar(16)  DEFAULT NULL COMMENT '学科 文科理科',
+    `year`               varchar(16)  DEFAULT NULL,
+    `province_id`        int          DEFAULT NULL,
+    `province_name`      varchar(16)  DEFAULT NULL COMMENT '省份',
+    `cond`               varchar(64)  DEFAULT NULL COMMENT '选科要求',
+    `edu_dur`            varchar(64)  DEFAULT NULL COMMENT '学制 4年 ｜ 5年',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_k` (`university_id`, `year`, `major_name`, `province_id`, `batch_num_name`, `subject_name`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 241
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci;
 
@@ -120,25 +122,29 @@ CREATE TABLE `admissions_news`
 CREATE TABLE `university_score`
 (
     `id`                     int NOT NULL AUTO_INCREMENT,
-    `year`                   varchar(16) DEFAULT NULL COMMENT '年份',
-    `admissions_batch_num`   varchar(64) DEFAULT NULL COMMENT '录取批次 本科1批2批等',
-    `admissions_type`        varchar(64) DEFAULT NULL COMMENT '录取类型：普通类 ｜地方专项计划｜国家专项计划',
-    `min`                    varchar(64) DEFAULT NULL COMMENT '最低分',
-    `min_ranking`            varchar(64) DEFAULT NULL COMMENT '最低位次',
-    `max`                    varchar(64) DEFAULT NULL COMMENT '最高分',
-    `avg`                    varchar(64) DEFAULT NULL COMMENT '平均分',
-    `avg_ranking`            varchar(64) DEFAULT NULL COMMENT '平均排名',
-    `province_id`            int         DEFAULT NULL COMMENT '省份ID',
-    `province_name`          varchar(64) DEFAULT NULL COMMENT '省份名称',
-    `subject_category`       varchar(64) DEFAULT NULL COMMENT '学科类别',
-    `province_control_score` varchar(64) DEFAULT NULL COMMENT '省控分数线',
-    `university_id`          varchar(64) DEFAULT NULL COMMENT '学校ID',
+    `year`                   varchar(16)  DEFAULT NULL COMMENT '年份',
+    `admissions_batch_num`   varchar(64)  DEFAULT NULL COMMENT '录取批次 本科1批2批等',
+    `admissions_type`        varchar(64)  DEFAULT NULL COMMENT '录取类型：普通类 ｜地方专项计划｜国家专项计划',
+    `min`                    varchar(64)  DEFAULT NULL COMMENT '最低分',
+    `min_ranking`            varchar(64)  DEFAULT NULL COMMENT '最低位次',
+    `max`                    varchar(64)  DEFAULT NULL COMMENT '最高分',
+    `avg`                    varchar(64)  DEFAULT NULL COMMENT '平均分',
+    `avg_ranking`            varchar(64)  DEFAULT NULL COMMENT '平均排名',
+    `province_id`            int          DEFAULT NULL COMMENT '省份ID',
+    `province_name`          varchar(64)  DEFAULT NULL COMMENT '省份名称',
+    `subject_category`       varchar(64)  DEFAULT NULL COMMENT '学科类别',
+    `province_control_score` varchar(64)  DEFAULT NULL COMMENT '省控分数线',
+    `university_id`          varchar(64)  DEFAULT NULL COMMENT '学校ID',
+    `cond`                   varchar(128) DEFAULT NULL COMMENT '选科要求',
+    `major_group_id`         varchar(32)  DEFAULT NULL COMMENT '专业组ID',
+    `major_group_name`       varchar(256) DEFAULT NULL COMMENT '专业组名称',
     PRIMARY KEY (`id`),
     UNIQUE KEY `idx` (`university_id`, `year`, `admissions_batch_num`, `admissions_type`, `province_id`,
-                      `subject_category`)
+                      `subject_category`, `major_group_id`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 3631
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci COMMENT ='院校分数线'
+  COLLATE = utf8mb4_0900_ai_ci COMMENT ='院校分数线';
 
 
 CREATE TABLE `employment_region_rate_metric`
@@ -151,6 +157,7 @@ CREATE TABLE `employment_region_rate_metric`
     PRIMARY KEY (`id`),
     UNIQUE KEY `unki` (`university_id`, `year`, `province_name`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 50
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci COMMENT ='就业地区流向指标表';
 
@@ -163,6 +170,7 @@ CREATE TABLE `company_attr_rate_metric`
     PRIMARY KEY (`id`),
     UNIQUE KEY `unik` (`university_id`, `name`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 43
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci COMMENT ='就业企业性质指标表';
 
@@ -175,6 +183,7 @@ CREATE TABLE `company_metric`
     PRIMARY KEY (`id`),
     UNIQUE KEY `unik` (`university_id`, `name`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 92
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_0900_ai_ci COMMENT ='公司指标表';
 
