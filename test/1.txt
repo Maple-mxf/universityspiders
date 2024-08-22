@@ -7,3 +7,5 @@
        `province_control_score` = values(`province_control_score`),
        `cond` = values(`cond`),
        `major_group_name` = values(`major_group_name`)
+
+       province_control_score

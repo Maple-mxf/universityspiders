@@ -13,7 +13,7 @@ from universityspiders.items import (
     UniversityScore,
     EmploymentRegionRateMetric,
     CompanyAttrRateMetric,
-    CompanyMetric
+    CompanyMetric, ErrorResponse
 )
 import pymysql
 from scrapy.utils.project import get_project_settings
@@ -261,22 +261,28 @@ class MajorScorePipeline(Write2DBPipeline):
             self.data.clear()
 
     def write_batch_data(self):
-        try:
-            sqlscript = """
-                    insert into major_score(str_id,
-                     subject_name, `avg`, `max`, `min`, min_ranking, 
-                     batch_num_name, subject_scopes_name,
-                                    subject_category_name,
-                                     major_id, university_id, `year`, province_id, province_name,
-                                     min_range,min_rank_range )
-                    values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                    
-                    """
-            self.cursor.executemany(sqlscript, self.data)
-            self.conn.commit()
-        except BaseException as e:
-            print(self.data)
-            print(e)
+        sqlscript = """
+                insert into major_score(str_id,
+                 subject_name, `avg`, `max`, `min`, min_ranking, 
+                 batch_num_name, subject_scopes_name,
+                                subject_category_name,
+                                 major_id, university_id, `year`, province_id, province_name,
+                                 min_range,min_rank_range )
+                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                on duplicate key update
+               `subject_name` = values(`subject_name`),
+               `avg` = values(`avg`),
+               `max` = values(`max`),
+               `min` = values(`min`),
+               `min_ranking` = values(`min_ranking`),
+               `batch_num_name` = values(`batch_num_name`),
+               `subject_scopes_name` = values(`subject_scopes_name`),
+               `subject_category_name` = values(`subject_category_name`),
+               `min_range` = values(`min_range`),
+               `min_rank_range` = values(`min_rank_range`)
+                """
+        self.cursor.executemany(sqlscript, self.data)
+        self.conn.commit()
 
     def close_spider(self, spider):
         super().close_spider(spider)
@@ -502,4 +508,38 @@ class UniversityMetricPipeline(Write2DBPipeline):
                 item.get('sort'),
             )
         ])
+        self.conn.commit()
+
+
+class ErrorResponsePipeline(Write2DBPipeline):
+    def close_spider(self, spider):
+        super().close_spider(spider)
+
+    def process_item(self, item: scrapy.Item, spider):
+        if isinstance(item, ErrorResponse):
+            return self._process_item(item, spider)
+        return item
+
+    def _process_item(self, item: scrapy.Item, spider):
+        self.data.append((
+            item.get('api_name'),
+            item.get('ctx_id'),
+            item.get('university_id'),
+            item.get('url'),
+            item.get('q'),
+            item.get('method'),
+        ))
+        if len(self.data) >= 0:
+            self.write_batch_data()
+            self.data.clear()
+
+        return item
+
+    def write_batch_data(self):
+        sqlscript = """
+        insert into error_response(
+        api_name, ctx_id, university_id, url, q, method) 
+        values (%s,%s,%s,%s,%s,%s)
+        """
+        self.cursor.executemany(sqlscript, self.data)
         self.conn.commit()

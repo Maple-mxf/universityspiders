@@ -61,6 +61,7 @@ ITEM_PIPELINES = {
     "universityspiders.pipelines.AdmissionsNewsPipeline": 303,
     "universityspiders.pipelines.UniversityScorePipeline": 304,
     "universityspiders.pipelines.UniversityMetricPipeline": 305,
+    "universityspiders.pipelines.ErrorResponsePipeline": 305,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

@@ -5,6 +5,10 @@ from enum import Enum
 import scrapy
 
 from universityspiders.items import ErrorResponse
+from datetime import datetime
+
+_DT = datetime.now()
+CTX_ID = f'{_DT.year}{_DT.month}{_DT.day}{_DT.hour}{_DT.minute}{_DT.second}'
 
 
 def read_university_meta():
@@ -70,10 +74,9 @@ def _make_apitarget(api: ApiTargetConsts,
     er['api_name'] = api.value
     er['university_id'] = university_id
     er['url'] = request.url
-    er['body'] = request.body
     er['method'] = request.method
+    er['ctx_id'] = CTX_ID
     if kwargs:
-        er['q'] = kwargs.get('q')
-        er['kwargs'] = kwargs.get('kwargs', None)
+        er['q'] = json.dumps(kwargs.get('q'), ensure_ascii=False)
 
     return er

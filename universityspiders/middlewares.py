@@ -66,7 +66,8 @@ class UniversityspidersDownloaderMiddleware:
         return s
 
     def process_request(self, request: scrapy.Request, spider: UniversitySpider):
-        return None
+        text = b'{"code":"12345","data":null}'
+        return scrapy.http.TextResponse(url=request.url, status=200, body=text)
 
     def process_response(self, request, response: scrapy.http.TextResponse, spider):
         return response

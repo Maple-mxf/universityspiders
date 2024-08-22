@@ -162,6 +162,6 @@ class ErrorResponse(scrapy.Item):
     university_id = scrapy.Field()
     url = scrapy.Field()
     q = scrapy.Field()
-    body = scrapy.Field()
     method = scrapy.Field()
-    kwargs = scrapy.Field()
+    ctx_id = scrapy.Field()
+    body = scrapy.Field()
