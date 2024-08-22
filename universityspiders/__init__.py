@@ -76,7 +76,8 @@ def _make_apitarget(api: ApiTargetConsts,
     er['url'] = request.url
     er['method'] = request.method
     er['ctx_id'] = CTX_ID
-    if kwargs:
-        er['q'] = json.dumps(kwargs.get('q'), ensure_ascii=False)
+    er['ctx_para'] = json.dumps(kwargs, ensure_ascii=False)
+
+
 
     return er

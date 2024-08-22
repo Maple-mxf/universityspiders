@@ -1,4 +1,3 @@
-import json
 
 import scrapy
 # useful for handling different item types with a single interface
@@ -13,7 +12,8 @@ from universityspiders.items import (
     UniversityScore,
     EmploymentRegionRateMetric,
     CompanyAttrRateMetric,
-    CompanyMetric, ErrorResponse
+    CompanyMetric,
+    ErrorResponse
 )
 import pymysql
 from scrapy.utils.project import get_project_settings
@@ -526,8 +526,8 @@ class ErrorResponsePipeline(Write2DBPipeline):
             item.get('ctx_id'),
             item.get('university_id'),
             item.get('url'),
-            item.get('q'),
             item.get('method'),
+            item.get('ctx_para'),
         ))
         if len(self.data) >= 0:
             self.write_batch_data()
@@ -538,7 +538,7 @@ class ErrorResponsePipeline(Write2DBPipeline):
     def write_batch_data(self):
         sqlscript = """
         insert into error_response(
-        api_name, ctx_id, university_id, url, q, method) 
+        api_name, ctx_id, university_id, url, method,ctx_para) 
         values (%s,%s,%s,%s,%s,%s)
         """
         self.cursor.executemany(sqlscript, self.data)

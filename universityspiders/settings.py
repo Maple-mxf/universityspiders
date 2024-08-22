@@ -97,4 +97,4 @@ DB_PORT = 3306
 DB_USER = 'root'
 DB_PWD = '123456'
 DB_DATABASE = 'universityspiders'
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'

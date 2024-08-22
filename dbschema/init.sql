@@ -190,14 +190,15 @@ CREATE TABLE `company_metric`
 CREATE TABLE `error_response`
 (
     `id`            bigint NOT NULL AUTO_INCREMENT,
-    `api_name`      varchar(64) comment 'API唯一标识',
+    `api_name`      varchar(64)  DEFAULT NULL COMMENT 'API唯一标识',
     `ctx_id`        varchar(64)  DEFAULT NULL COMMENT '上下文ID',
     `university_id` int          DEFAULT NULL COMMENT '学校ID',
     `url`           varchar(512) DEFAULT NULL COMMENT 'url',
-    `q`             varchar(512) DEFAULT NULL COMMENT 'query参数',
     `method`        varchar(16)  DEFAULT NULL COMMENT 'http请求方式',
+    `ctx_para`      text comment '额外的上下文参数 JSON字符串',
     `create_time`   datetime     DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
+  AUTO_INCREMENT = 2
   DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_0900_ai_ci COMMENT ='错误请求记录表'
+  COLLATE = utf8mb4_0900_ai_ci COMMENT ='错误请求记录表';
